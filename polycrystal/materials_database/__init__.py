@@ -43,7 +43,7 @@ class MaterialsDataBase:
         """
         return list(self.processes[process].keys())
 
-    def get_material(self, process, name):
+    def get_material(self, process, name, return_single_crystal=True):
 
         """Return material data
 
@@ -53,11 +53,15 @@ class MaterialsDataBase:
            name of material process
         name: str
            name of material to return
+        return_single_crystal: bool, default=False
+           if True return the SingleCrystal instance of that material, otherwise
+           return the loaded material instance, as read from the database
 
         Returns
         -------
         Instance
-           instance of material class correpsonding to material process
+           instance of loaded material class correpsonding to material process, or
+           the single crystal instance for that process
         """
         matl_d = self.processes[process]
         Loader = get_loader(process)
@@ -66,4 +70,5 @@ class MaterialsDataBase:
         except:
             raise KeyError(f"material '{name}' not found in database")
 
-        return Loader(entry)
+        lmat = Loader(entry)
+        return lmat.single_crystal if return_single_crystal else lmat
