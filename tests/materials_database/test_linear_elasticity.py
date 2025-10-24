@@ -20,10 +20,17 @@ def database_le(yaml_le):
     return MaterialsDataBase(yaml_le)
 
 
+def get_material(db, proc, name):
+    return db.get_material(proc, name, return_single_crystal=False)
+
+
 class TestLinearElasticity:
 
+    def get_material(self, matl):
+        return
+
     def test_isotropic_Enu(self, database_le, process):
-        iso_mat = database_le.get_material(process, "iso-mat-Enu")
+        iso_mat = get_material(database_le, process, "iso-mat-Enu")
         mod_d = iso_mat.yaml_d["moduli"]
 
         assert iso_mat.units == "GPa"
@@ -35,7 +42,7 @@ class TestLinearElasticity:
         assert len(iso_mat.cij) == 2
 
     def test_cubic(self, database_le, process):
-        cub_mat = database_le.get_material(process, "cub-mat")
+        cub_mat = database_le.get_material(process, "cub-mat", False)
 
         assert cub_mat.units == "MPa"
         assert cub_mat.system == "MANDEL"
@@ -44,7 +51,7 @@ class TestLinearElasticity:
         assert cub_mat.cij == [11.1, 12.1, 44.1]
 
     def test_hexagonal(self, database_le, process):
-        hex_mat = database_le.get_material(process, "hex-mat")
+        hex_mat = database_le.get_material(process, "hex-mat", False)
 
         assert hex_mat.units == "psi"
         assert hex_mat.system == "VOIGT_GAMMA"
@@ -53,7 +60,7 @@ class TestLinearElasticity:
         assert hex_mat.cij == [11.0, 12.0, 13.0, 44.0, 66.0]
 
     def test_tetragonal(self,  database_le, process):
-        tet_mat = database_le.get_material(process, "tet-mat")
+        tet_mat = database_le.get_material(process, "tet-mat", False)
 
         assert tet_mat.units == "psi"
         assert tet_mat.system == "VOIGT_GAMMA"
