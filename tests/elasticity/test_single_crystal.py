@@ -49,28 +49,33 @@ class TestSingleCrystal:
 
         # From K, G
         sx = SingleCrystal.from_K_G(1/3, 1/2)
+        sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
         # From E, nu
         sx = SingleCrystal.from_E_nu(1, 0)
+        sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
         # Isotropic: c11, c12
         sx = SingleCrystal(
             'isotropic', [1.0,  0.0]
         )
+        sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
         # Cubic
         sx = SingleCrystal(
             'cubic', [1.0,  0.0,  0.5]
         )
+        sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
         # Hexagonal
         sx = SingleCrystal(
             'hexagonal', [1.0,  0.0,  0.0,  1.0,  0.5]
         )
+        sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
         # Triclinic
@@ -78,9 +83,7 @@ class TestSingleCrystal:
             1.0, 0.0,  0.0,  0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  0.0,  0.0,  1.0,
             0.0,  0.0,  0.0,  1.0,  0.0,  0.0,  1.0,  0.0,  1.0
         ]
-        sx = SingleCrystal(
-            'triclinic', cij, input_system="MANDEL"
-        )
+        sx = SingleCrystal('triclinic', cij, system="MANDEL")
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
     def test_cij_in_out(self):
@@ -89,9 +92,9 @@ class TestSingleCrystal:
         # Isotropic.
         sx = SingleCrystal(
             'isotropic', [2.3, 4.9],
-            input_system = "VOIGT_GAMMA",
-            output_system = "MANDEL",
+            system = "VOIGT_GAMMA",
         )
+        sx.system = "MANDEL"
         assert np.all(sx.cij_in == sx.cij)
         assert np.allclose([2.3, 4.9], sx.cij_in)
         assert np.allclose([2.3, 4.9], sx.cij_out)
@@ -99,9 +102,9 @@ class TestSingleCrystal:
         # Cubic.
         sx = SingleCrystal(
             'cubic', [2.3, 4.5, 7.8],
-            input_system = "VOIGT_GAMMA",
-            output_system = "VOIGT_EPSILON",
+            system = "VOIGT_GAMMA",
         )
+        sx.system = "VOIGT_EPSILON"
         assert np.allclose([2.3, 4.5, 7.8], sx.cij_in)
         assert np.allclose([2.3, 4.5, 2 * 7.8], sx.cij_out)
 
@@ -110,9 +113,8 @@ class TestSingleCrystal:
         test_cij_gam = [1.0,  2.3, 3.4, 5.6, 3.3]
         sx = SingleCrystal(
             'hexagonal', test_cij_eps,
-            input_system = "VOIGT_EPSILON",
-            output_system = "VOIGT_GAMMA",
         )
+        sx.system = "VOIGT_GAMMA"
         assert np.all(sx.cij_in == sx.cij)
         assert np.allclose(test_cij_gam, sx.cij_out)
 
@@ -120,9 +122,9 @@ class TestSingleCrystal:
         test_cij = np.arange(21)
         sx = SingleCrystal(
             'triclinic', test_cij,
-            input_system="MANDEL",
-            output_system = "VOIGT_GAMMA"
+            system="MANDEL",
         )
+        sx.system = "VOIGT_GAMMA"
         top_left = np.array((0, 1, 2, 6, 7, 11))
         assert np.allclose(sx.cij_out[top_left], test_cij[top_left])
         top_right = np.array((3, 4, 5, 8, 9, 10, 12, 13, 14,))
