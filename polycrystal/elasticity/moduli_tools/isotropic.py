@@ -1,6 +1,6 @@
 """Isotropic moduli handler"""
 
-from .base_moduli import BaseModuli
+from .base_moduli import BaseModuli, DEFAULTS
 from .stiffness_matrix import StiffnessMatrix
 
 import numpy as np
@@ -18,10 +18,11 @@ class Isotropic(BaseModuli):
        MatrixComponentSystem attribute
     """
 
-    def __init__(self, c11, c12, **kwargs):
+    def __init__(self, c11, c12, system,
+                 units=DEFAULTS["units"],
+                 ):
         self.c11 = c11
         self.c12 = c12
-        system = kwargs["system"]
         self.init_system(system)
 
     @classmethod
@@ -45,7 +46,7 @@ class Isotropic(BaseModuli):
         return (c11, c12)
 
     @classmethod
-    def from_E_nu(cls, E, nu):
+    def cij_from_E_nu(cls, E, nu):
         """Compute cij from Young's modulus and Poisson ratio
 
         Parameters
@@ -61,7 +62,7 @@ class Isotropic(BaseModuli):
        """
         K = E/(1 - 2*nu)/3.
         G = E/(1 + nu)/2.
-        return (c11, c12)
+        return cls.cij_from_K_G(K, G)
 
     @property
     def cij(self):

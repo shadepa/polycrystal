@@ -13,7 +13,6 @@ class BaseModuli(ABC):
 
     """Moduli Handlers"""
     SYSTEMS = MatrixComponentSystem
-    DEFAULT_SYSTEM = MatrixComponentSystem.VOIGT_GAMMA
     subclass_registry = {}
 
 

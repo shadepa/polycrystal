@@ -52,10 +52,9 @@ class Cubic(BaseModuli):
         self.c12 = m[0, 1]
         self.c44 = m[3, 3]
 
-
     @classmethod
-    def from_K_Gd_Gs(cls, K, Gd, Gs, system=BaseModuli.SYSTEMS.MANDEL):
-        """Initialize from bulk and anisotropic shear moduli
+    def cij_from_K_Gd_Gs(cls, K, Gd, Gs, system):
+        """cij from bulk and anisotropic shear moduli
 
         Parameters
         ----------
@@ -63,6 +62,11 @@ class Cubic(BaseModuli):
            bulk modulus
         Gd, Gs: float
            anisotropic shear moduli
+
+        Returns
+        -------
+        tuple:
+           c11, c12, c44
         """
         c11 = (3*K + 4*Gd)/3.
         c12 = (3*K - 2*Gd)/3.
@@ -71,7 +75,7 @@ class Cubic(BaseModuli):
         else:
             c44 = 2.0 * Gs
 
-        return cls(c11, c12, c44, system)
+        return c11, c12, c44
 
     @property
     def K(self):
