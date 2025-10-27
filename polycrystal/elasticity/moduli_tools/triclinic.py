@@ -1,6 +1,6 @@
 """Handler for triclinic moduli"""
 
-from .base_moduli import BaseModuli, DEFAULTS
+from .base_moduli import BaseModuli
 from .stiffness_matrix import StiffnessMatrix
 
 import numpy as np
@@ -17,9 +17,9 @@ class Triclinic(BaseModuli):
        MatrixComponentSystem attribute
     """
 
-    def __init__(self, cij, system=DEFAULTS["system"], units=DEFAULTS["units"]):
+    def __init__(self, cij, system, units):
         self._cij = cij
-        self.init_system(system)
+        self.init_system(system, units)
 
     @property
     def cij(self):
@@ -27,7 +27,7 @@ class Triclinic(BaseModuli):
 
     def stiffness_from_moduli(self):
         """Independent moduli to matrix"""
-        return StiffnessMatrix(self.cij, self.system)
+        return StiffnessMatrix(self.cij, self.system, self.units)
 
     def moduli_from_stiffness(self):
         """Independent moduli to matrix"""

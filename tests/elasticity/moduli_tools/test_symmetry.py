@@ -7,6 +7,7 @@ from polycrystal.elasticity.moduli_tools import Isotropic, Cubic, Hexagonal, Tri
 
 
 SYSTEMS = Isotropic.SYSTEMS
+UNITS = "GPa"
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ class TestIsotropic:
         cij = Isotropic.cij_from_K_G(1/3, 1/2)
 
         system = SYSTEMS.MANDEL
-        iso = Isotropic(*cij, system)
+        iso = Isotropic(*cij, system, UNITS)
         assert np.allclose(iso.stiffness.matrix, IDENTITY_6)
 
         iso.system = SYSTEMS.VOIGT_EPSILON
@@ -37,15 +38,11 @@ class TestIsotropic:
         iso.system = SYSTEMS.VOIGT_GAMMA
         assert np.allclose(iso.stiffness.matrix, IDENTITY_VG)
 
-    def test_identity_E_nu(self):
-        """Test cij from E & nu."""
-        assert np.allclose(cij, (1.0, 0.0))
-
     def test_identity_E_nu(self, IDENTITY_6):
         """Test instantiating from E & nu."""
         system = SYSTEMS.MANDEL
         cij = Isotropic.cij_from_E_nu(1.0, 0.0)
-        iso = Isotropic(*cij, system)
+        iso = Isotropic(*cij, system, UNITS)
         assert np.allclose(iso.stiffness.matrix, IDENTITY_6)
 
     def test_eigenvalues(self):
@@ -53,7 +50,7 @@ class TestIsotropic:
         # This should give eigenvalues of 3.0 and 2.0.
         system = SYSTEMS.MANDEL
         cij = Isotropic.cij_from_K_G(1.0, 1.0)
-        iso = Isotropic(*cij, system)
+        iso = Isotropic(*cij, system, UNITS)
 
         # First test bulk eigenvector.
         ev_3K_v = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
@@ -84,7 +81,7 @@ class TestCubic:
         system = SYSTEMS.MANDEL
         K, Gd, Gs = 1.0, 1.0, 2.0
         cij = Cubic.cij_from_K_Gd_Gs(K, Gd, Gs, system)
-        cub = Cubic(*cij, system)
+        cub = Cubic(*cij, system, UNITS)
 
         # First test bulk eigenvector.
         ev_3K_v = np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
@@ -109,7 +106,7 @@ class TestCubic:
         system=SYSTEMS.MANDEL
         K, Gd, Gs = 3.1, 5.2, 7.3
         cij = Cubic.cij_from_K_Gd_Gs(K, Gd, Gs, system)
-        cub = Cubic(*cij, system)
+        cub = Cubic(*cij, system, UNITS)
         for sys in SYSTEMS:
             cub.system = sys
             assert cub.K == K
@@ -125,7 +122,7 @@ class TestHexagonal:
         """Hexagonal moduli"""
 
         c11, c12, c13, c33, c44 = 1.0, 0.0, 0.0, 1.0, 1.0
-        hex = Hexagonal(c11, c12, c13, c33, c44, SYSTEMS.MANDEL)
+        hex = Hexagonal(c11, c12, c13, c33, c44, SYSTEMS.MANDEL, UNITS)
         assert np.allclose(hex.stiffness.matrix, IDENTITY_6)
         hex.system = SYSTEMS.VOIGT_EPSILON
         assert np.allclose(hex.stiffness.matrix, IDENTITY_6)
@@ -141,7 +138,7 @@ class TestTriclinic:
     def test_systems(self):
         """Test that form changes correctly with systems"""
         cij = np.arange(21)
-        tricl = Triclinic(cij, system=SYSTEMS.MANDEL)
+        tricl = Triclinic(cij, SYSTEMS.MANDEL, UNITS)
 
         # Check symmetry of stiffness matrix.
         assert np.allclose(tricl.stiffness.matrix, tricl.stiffness.matrix.T)

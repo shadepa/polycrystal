@@ -76,7 +76,7 @@ class StiffnessMatrix:
 
     ureg = pint.UnitRegistry()
 
-    def __init__(self, cij, system, units=DEFAULTS["units"]):
+    def __init__(self, cij, system, units):
         if len(cij) != 21:
             raise ValueError("cij must have length 21")
 
