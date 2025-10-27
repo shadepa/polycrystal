@@ -6,9 +6,12 @@ from polycrystal.utils.tensor_data.mandel_system import MandelSystem
 from polycrystal.utils.tensor_data.voigt_system import VoigtSystem
 
 from .moduli_tools import moduli_handler, component_system, Isotropic
-from .moduli_tools.stiffness_matrix import DEFAULT_UNITS
+from .moduli_tools.stiffness_matrix import DEFAULTS, MatrixComponentSystem
 
-SYSTEMS = Isotropic.SYSTEMS
+SYSTEMS = MatrixComponentSystem
+
+
+DEFAULT_UNITS = DEFAULTS["units"]
 
 
 class SingleCrystal:
@@ -81,7 +84,6 @@ class SingleCrystal:
             cte=None
     ):
         self.symm = symm
-        self._cij = np.array(cij).copy()
         self.name = name
 
         # The `units` are initialized with the `input_units` and then
@@ -91,11 +93,11 @@ class SingleCrystal:
         ModuliHandler = moduli_handler(symm)
         if symm == "triclinic":
             self.moduli = ModuliHandler(
-                self.cij, system=self.system, units=input_units
+                cij, system=self.system, units=input_units
             )
         else:
             self.moduli = ModuliHandler(
-                *self.cij, system=self.system, units=input_units
+                *cij, system=self.system, units=input_units
             )
         self.moduli.units = output_units
 
@@ -124,9 +126,7 @@ class SingleCrystal:
         G: float
            shear modulus
         """
-        iso = Isotropic.from_K_G(K, G)
-        cij = [iso.c11, iso.c12]
-        return cls("isotropic", cij, **kwargs)
+        return cls("isotropic", Isotropic.cij_from_K_G(K, G), **kwargs)
 
     @classmethod
     def from_E_nu(cls, E, nu, **kwargs):
@@ -139,9 +139,7 @@ class SingleCrystal:
         nu: float
            Poisson ratio
         """
-        iso = Isotropic.from_E_nu(E, nu)
-        cij = [iso.c11, iso.c12]
-        return cls("isotropic", cij, **kwargs)
+        return cls("isotropic", Isotropic.cij_from_E_nu(E, nu), **kwargs)
 
     @property
     def system(self):
@@ -171,16 +169,6 @@ class SingleCrystal:
     @property
     def cij(self):
         """Return moduli for the input system"""
-        return self._cij
-
-    @property
-    def cij_in(self):
-        """Return moduli for the input system"""
-        return self.cij
-
-    @property
-    def cij_out(self):
-        """Return moduli for the output system"""
         return self.moduli.cij
 
     @property
@@ -256,6 +244,7 @@ class SingleCrystal:
         sig_c_vec = System(sig_c_mat).symm
 
         eps_c_vec = self.compliance @ sig_c_vec.T
+        print("self.system", self.system)
         if self.system is SYSTEMS.VOIGT_GAMMA:
             eps_c_vec[3:] *= 0.5
 
@@ -269,6 +258,7 @@ class SingleCrystal:
 
     @staticmethod
     def _to_3d(arr):
+        """Make sure that array is 3-dimensional and of shape (n, 3, 3)"""
         if arr is None:
             return arr
 

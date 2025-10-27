@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from .stiffness_matrix import (
-    MatrixComponentSystem, StiffnessMatrix, DEFAULT_UNITS
+    MatrixComponentSystem, DEFAULTS
 )
 
 import numpy as np
@@ -13,7 +13,7 @@ class BaseModuli(ABC):
 
     """Moduli Handlers"""
     SYSTEMS = MatrixComponentSystem
-    DEFAULT_SYSTEM = MatrixComponentSystem.MANDEL
+    DEFAULT_SYSTEM = MatrixComponentSystem.VOIGT_GAMMA
     subclass_registry = {}
 
 

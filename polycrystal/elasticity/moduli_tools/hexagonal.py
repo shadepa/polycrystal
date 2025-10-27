@@ -1,7 +1,7 @@
 """Handler for hexagonal moduli"""
 
 from .base_moduli import BaseModuli
-from .stiffness_matrix import StiffnessMatrix, DEFAULT_UNITS
+from .stiffness_matrix import StiffnessMatrix, DEFAULTS
 
 import numpy as np
 
@@ -20,8 +20,8 @@ class Hexagonal(BaseModuli):
     """
 
     def __init__(self, c11, c12, c13, c33, c44,
-                 system=BaseModuli.DEFAULT_SYSTEM,
-                 units=DEFAULT_UNITS
+                 system=DEFAULTS["system"],
+                 units=DEFAULTS["units"]
                  ):
         self.c11 = c11
         self.c12 = c12

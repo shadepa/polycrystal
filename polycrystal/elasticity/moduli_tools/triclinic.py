@@ -1,6 +1,6 @@
 """Handler for triclinic moduli"""
 
-from .base_moduli import BaseModuli, DEFAULT_UNITS
+from .base_moduli import BaseModuli, DEFAULTS
 from .stiffness_matrix import StiffnessMatrix
 
 import numpy as np
@@ -17,7 +17,7 @@ class Triclinic(BaseModuli):
        MatrixComponentSystem attribute
     """
 
-    def __init__(self, cij, system=BaseModuli.SYSTEMS.MANDEL, units=DEFAULT_UNITS):
+    def __init__(self, cij, system=DEFAULTS["system"], units=DEFAULTS["units"]):
         self._cij = cij
         self.init_system(system)
 

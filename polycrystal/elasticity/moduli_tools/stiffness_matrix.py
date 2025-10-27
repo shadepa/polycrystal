@@ -8,11 +8,11 @@ import numpy as np
 import pint
 
 
-DEFAULT_UNITS = "GPa"
+DEFAULTS = {"units": "GPa", "system": "VOIGT_GAMMA"}
 
 _UT_INDICES = np.triu_indices(6)
 _LT_INDICES = np.tril_indices(6, k=-1)
-_LT_CIJ = [1, 2, 7, 3, 8, 12, 4, 9, 13, 16, 5, 10, 14, 17, 19]
+_LT_CIJ = np.array([1, 2, 7, 3, 8, 12, 4, 9, 13, 16, 5, 10, 14, 17, 19])
 
 _Scales = namedtuple("_Scales", ["up_right", "low_left", "low_right"])
 
@@ -76,10 +76,11 @@ class StiffnessMatrix:
 
     ureg = pint.UnitRegistry()
 
-    def __init__(self, cij, system, units=DEFAULT_UNITS):
+    def __init__(self, cij, system, units=DEFAULTS["units"]):
         if len(cij) != 21:
             raise ValueError("cij must have length 21")
 
+        print("sm system: ", system)
         if system not in MatrixComponentSystem:
             raise ValueError("`system` must be an attribtue of MatrixComponentSystem")
         self._system = system
@@ -91,7 +92,12 @@ class StiffnessMatrix:
     def _fill_cij(self, cij):
         mat = np.zeros((6, 6))
         mat[_UT_INDICES] = cij
-        mat[_LT_INDICES] = cij[_LT_CIJ]
+        # Was getting error on this:
+        #  "TypeError: only integer scalar arrays can be converted to a scalar index".
+        # mat[_LT_INDICES] = cij[_LT_CIJ]
+        _i, _j = _LT_INDICES
+        for i, i_cij in enumerate(_LT_CIJ):
+            mat[_i[i], _j[i]] = cij[i_cij]
 
         # Note that the VOIGT_EPSILON system may not be symmetric as the lower
         # left 3x3 submatrix is one half the upper right. This corrects for
