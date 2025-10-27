@@ -244,7 +244,7 @@ class SingleCrystal:
         sig_c_vec = System(sig_c_mat).symm
 
         eps_c_vec = self.compliance @ sig_c_vec.T
-        print("self.system", self.system)
+
         if self.system is SYSTEMS.VOIGT_GAMMA:
             eps_c_vec[3:] *= 0.5
 

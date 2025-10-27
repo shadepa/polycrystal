@@ -80,7 +80,6 @@ class StiffnessMatrix:
         if len(cij) != 21:
             raise ValueError("cij must have length 21")
 
-        print("sm system: ", system)
         if system not in MatrixComponentSystem:
             raise ValueError("`system` must be an attribtue of MatrixComponentSystem")
         self._system = system

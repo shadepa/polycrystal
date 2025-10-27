@@ -162,8 +162,10 @@ class TestSingleCrystal:
     def test_apply_cubic(self, eps0):
         """Test cubic stiffness/compliance under rotation"""
         sym = 'cubic'
-        mod = Cubic.from_K_Gd_Gs(3., 2, 5.)
-        sx = SingleCrystal('cubic', mod.cij)
+        system = Cubic.SYSTEMS.MANDEL
+        cij = Cubic.cij_from_K_Gd_Gs(3., 2, 5., system)
+        mod = Cubic(*cij, system)
+        sx = SingleCrystal('cubic', mod.cij, system=system)
 
         cubsym = get_symmetries(sym)
         rmats = cubsym.rmats
@@ -174,7 +176,6 @@ class TestSingleCrystal:
 
         # Stresses should be the same since the crystal is invariant under it's
         # symmetry group.
-        # print("sig3: ", sig3, "\n [0]:", np.tile(sig3[0], (nsym, 1, 1)))
         assert np.allclose(sig3, np.tile(sig3[0], (nsym, 1, 1)))
 
         # Verify compliance.

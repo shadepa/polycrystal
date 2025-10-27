@@ -73,7 +73,7 @@ class Isotropic(BaseModuli):
         c11 = c22 = c33 = self.c11
         c12 = c13 = c23 = self.c12
         cdiff_12 = c11 - c12
-        print("self.system: ", self.system)
+
         if self.system is self.SYSTEMS.VOIGT_GAMMA:
             c44 = c55 = c66 = 0.5 * cdiff_12
         else:
