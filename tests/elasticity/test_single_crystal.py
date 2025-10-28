@@ -132,16 +132,12 @@ class TestSingleCrystal:
 
     def test_units(self):
 
-        sx = SingleCrystal(
-            'isotropic', [1.0, 0.0],
-            input_units= "GPa",
-        )
+        sx = SingleCrystal('isotropic', [1.0, 0.0], units= "GPa")
         assert sx.stiffness[0, 0] == 1.0
 
-        sx.output_units = "MPa"
+        sx.units = "MPa"
         assert sx.stiffness[0, 0] == 1.0e3
-
-        assert sx.output_units == sx.moduli.units
+        assert sx.units == sx.moduli.units
 
     def test_apply(self, rot_90, eps0):
         """Test apply_stiffness and apply_compliance methods"""
@@ -164,8 +160,7 @@ class TestSingleCrystal:
         sym = 'cubic'
         system = Cubic.SYSTEMS.MANDEL
         cij = Cubic.cij_from_K_Gd_Gs(3., 2, 5., system)
-        mod = Cubic(*cij, system)
-        sx = SingleCrystal('cubic', mod.cij, system=system)
+        sx = SingleCrystal('cubic', cij, system=system)
 
         cubsym = get_symmetries(sym)
         rmats = cubsym.rmats

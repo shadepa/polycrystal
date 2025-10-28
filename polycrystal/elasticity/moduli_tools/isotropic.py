@@ -21,7 +21,6 @@ class Isotropic(BaseModuli):
     def __init__(self, c11, c12, system, units):
         self.c11 = c11
         self.c12 = c12
-        self.units = units
         self.init_system(system, units)
 
     @classmethod

@@ -66,7 +66,7 @@ class BaseModuli(ABC):
 
     @units.setter
     def units(self, v):
-        self._units = v
+        self._units = self.stiffness.units = v
 
     def _check_system(self, v):
         if v not in self.SYSTEMS:
