@@ -86,26 +86,58 @@ class TestSingleCrystal:
         sx = SingleCrystal('triclinic', cij, system="MANDEL")
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
-    def test_cij(self):
+    def test_cij_isotropic(self):
         """Test cij"""
 
         # Isotropic.
+        iso_mod = [2.3, 4.9]
         sx = SingleCrystal(
-            'isotropic', [2.3, 4.9],
+            "isotropic", iso_mod,
             system = "VOIGT_GAMMA",
         )
-        assert np.allclose([2.3, 4.9], sx.cij)
+        assert np.allclose(iso_mod, sx.cij)
         sx.system = "MANDEL"
-        assert np.allclose([2.3, 4.9], sx.cij)
+        assert np.allclose(iso_mod, sx.cij)
+
+    def test_cij_cubic(self):
+        """Test cij"""
 
         # Cubic.
-        sx = SingleCrystal(
-            'cubic', [2.3, 4.5, 7.8],
-            system = "VOIGT_GAMMA",
-        )
-        assert np.allclose([2.3, 4.5, 7.8], sx.cij)
+        cub_mod_vg = np.array([2.3, 4.5, 7.8])
+        cub_mod_ve = (1.0, 1.0, 2.0) * cub_mod_vg
+        cub_mod_md = cub_mod_ve
+
+        sx = SingleCrystal('cubic', cub_mod_vg, system="VOIGT_GAMMA")
+        assert np.allclose(cub_mod_vg, sx.cij)
+
         sx.system = "VOIGT_EPSILON"
-        assert np.allclose([2.3, 4.5, 2 * 7.8], sx.cij)
+        assert np.allclose(cub_mod_ve, sx.cij)
+
+        sx.system = "MANDEL"
+        assert np.allclose(cub_mod_md, sx.cij)
+
+        # Now instantiate using other systems.
+        sx = SingleCrystal('cubic', cub_mod_ve, system="VOIGT_EPSILON")
+        assert np.allclose(cub_mod_ve, sx.cij)
+
+        sx.system = "VOIGT_GAMMA"
+        assert np.allclose(cub_mod_vg, sx.cij)
+
+        sx.system = "MANDEL"
+        assert np.allclose(cub_mod_md, sx.cij)
+
+        # Now instantiate using other systems.
+        sx = SingleCrystal('cubic', cub_mod_ve, system="MANDEL")
+        assert np.allclose(cub_mod_md, sx.cij)
+
+        sx.system = "VOIGT_GAMMA"
+        assert np.allclose(cub_mod_vg, sx.cij)
+
+        sx.system = "VOIGT_EPSILON"
+        assert np.allclose(cub_mod_ve, sx.cij)
+
+    def test_cij(self):
+        """Test cij"""
 
         # Hexagonal
         test_cij_eps = [1.0,  2.3, 3.4, 5.6, 2 * 3.3]
@@ -142,14 +174,24 @@ class TestSingleCrystal:
     def test_apply(self, rot_90, eps0):
         """Test apply_stiffness and apply_compliance methods"""
         sx = SingleCrystal.from_K_G(2/3, 1.0, system="VOIGT_GAMMA")
+        sig0 = sx.apply_stiffness(eps0)
+        assert np.allclose(sig0, 2 * eps0)
+        assert np.allclose(sx.apply_compliance(sig0), eps0)
+
         sx = SingleCrystal.from_K_G(2/3, 1.0, system="VOIGT_EPSILON")
         sig0 = sx.apply_stiffness(eps0)
         assert np.allclose(sig0, 2 * eps0)
+
+        sx = SingleCrystal.from_K_G(2/3, 1.0, system="MANDEL")
+        sig0 = sx.apply_stiffness(eps0)
+        assert np.allclose(sig0, 2 * eps0)
+        assert np.allclose(sx.apply_compliance(sig0), eps0)
 
         # Add rotation matrices.
         eps3 = np.tile(eps0, (3, 1, 1))
         sig3 = sx.apply_stiffness(eps3, rot_90)
         assert np.allclose(sig3, 2 * eps3)
+        assert np.allclose(sx.apply_compliance(sig0), eps0)
 
         # Apply compliance to get original back.
         eps3_a = sx.apply_compliance(sig3, rot_90)

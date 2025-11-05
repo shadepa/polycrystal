@@ -28,8 +28,8 @@ class SingleCrystal:
        name to use for the material
     system: str, default = "VOIGT_GAMMA"
        system to use for representation of symmetric matrices; choices are
-       {"MANDEL", "VOIGT_GAMMA", VOIGT_EPSILON"}
-    units: str, default = 'GPa'
+       {"VOIGT_GAMMA", VOIGT_EPSILON", "MANDEL"}
+    units: str, default = "GPa"
        units of stiffness matrix
     cte: float | array(3, 3), default = None
        coefficient of thermal expansion; a single value for isotropic materials
@@ -189,7 +189,7 @@ class SingleCrystal:
 
         eps_c_vec = System(eps_c_mat).symm
         if self.system is SYSTEMS.VOIGT_GAMMA:
-            eps_c_vec[3:] *= 2.0
+            eps_c_vec[:, 3:] *= 2.0
 
         sig_c_vec = self.stiffness @ eps_c_vec.T
 
@@ -225,9 +225,8 @@ class SingleCrystal:
         sig_c_vec = System(sig_c_mat).symm
 
         eps_c_vec = self.compliance @ sig_c_vec.T
-
         if self.system is SYSTEMS.VOIGT_GAMMA:
-            eps_c_vec[3:] *= 0.5
+            eps_c_vec[3:, :] *= 0.5
 
         eps_c_mat = System.from_parts(symm=eps_c_vec.T).matrices
 
