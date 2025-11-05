@@ -6,7 +6,7 @@ TO DO
 * Update properties below.
 """
 
-from .base_moduli import BaseModuli, DEFAULT_UNITS
+from .base_moduli import BaseModuli, DEFAULTS
 from .stiffness_matrix import StiffnessMatrix
 
 import numpy as np
@@ -22,14 +22,11 @@ class Cubic(BaseModuli):
     system: Enum
        MatrixComponentSystem
     """
-    def __init__(self, c11, c12, c44,
-                 system=BaseModuli.SYSTEMS.MANDEL,
-                 units=DEFAULT_UNITS
-                 ):
+    def __init__(self, c11, c12, c44, system, units):
         self.c11 = c11
         self.c12 = c12
         self.c44 = c44
-        self.init_system(system)
+        self.init_system(system, units)
 
     @property
     def cij(self):
@@ -43,7 +40,7 @@ class Cubic(BaseModuli):
 
         cij = self._high_symmetry_matrix(c11, c12, c13, c22, c23, c33, c44, c55, c66)
 
-        return StiffnessMatrix(cij, self.system)
+        return StiffnessMatrix(cij, self.system, self.units)
 
     def moduli_from_stiffness(self):
         """Independent moduli to matrix"""
@@ -52,10 +49,9 @@ class Cubic(BaseModuli):
         self.c12 = m[0, 1]
         self.c44 = m[3, 3]
 
-
     @classmethod
-    def from_K_Gd_Gs(cls, K, Gd, Gs, system=BaseModuli.SYSTEMS.MANDEL):
-        """Initialize from bulk and anisotropic shear moduli
+    def cij_from_K_Gd_Gs(cls, K, Gd, Gs, system):
+        """cij from bulk and anisotropic shear moduli
 
         Parameters
         ----------
@@ -63,6 +59,11 @@ class Cubic(BaseModuli):
            bulk modulus
         Gd, Gs: float
            anisotropic shear moduli
+
+        Returns
+        -------
+        tuple:
+           c11, c12, c44
         """
         c11 = (3*K + 4*Gd)/3.
         c12 = (3*K - 2*Gd)/3.
@@ -71,7 +72,7 @@ class Cubic(BaseModuli):
         else:
             c44 = 2.0 * Gs
 
-        return cls(c11, c12, c44, system)
+        return c11, c12, c44
 
     @property
     def K(self):

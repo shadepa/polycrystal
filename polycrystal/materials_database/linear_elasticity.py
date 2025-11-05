@@ -73,7 +73,7 @@ class LinearElasticMaterial(BaseLoader):
             if C11 in mod and C12 in mod:
                 cij = [mod[C11], mod[C12]]
             elif E in mod and NU in mod:
-                cij = Isotropic.from_E_nu(mod[E], mod[NU]).cij
+                cij = Isotropic.cij_from_E_nu(mod[E], mod[NU])
         elif symm2use == "cubic":
             cij = [mod[c] for c in (C11, C12, C44)]
         elif symm2use == "hexagonal":

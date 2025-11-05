@@ -6,9 +6,9 @@ from polycrystal.utils.tensor_data.mandel_system import MandelSystem
 from polycrystal.utils.tensor_data.voigt_system import VoigtSystem
 
 from .moduli_tools import moduli_handler, component_system, Isotropic
-from .moduli_tools.stiffness_matrix import DEFAULT_UNITS
+from .moduli_tools.stiffness_matrix import DEFAULTS, MatrixComponentSystem
 
-SYSTEMS = Isotropic.SYSTEMS
+SYSTEMS = MatrixComponentSystem
 
 
 class SingleCrystal:
@@ -26,16 +26,12 @@ class SingleCrystal:
          "triclinic": (c11, c12, ...), 21 values upper triangle of matrix
     name: str, optional
        name to use for the material
-    input_system: str, default = "VOIGT_GAMMA"
+    system: str, default = "VOIGT_GAMMA"
        system to use for representation of symmetric matrices; choices are
-       {"MANDEL", "VOIGT_GAMMA", VOIGT_EPSILON"}
-    output_system: str, default = "MANDEL"
-       system to use for representation of stiffness matrix; same choices
-    input_units: str, default = DEFAULT_UNITS
-       units of input moduli
-    output_units: str, default=DEFAULT_UNITS
-       units of output stiffness
-    cte: float | array(3, 3)
+       {"VOIGT_GAMMA", VOIGT_EPSILON", "MANDEL"}
+    units: str, default = "GPa"
+       units of stiffness matrix
+    cte: float | array(3, 3), default = None
        coefficient of thermal expansion; a single value for isotropic materials
        or a 3 x 3 array in the crystal frame
 
@@ -43,18 +39,20 @@ class SingleCrystal:
     ----------
     cte: array(3, 3) or float
        coefficient of thermal expansion, if specified
-    input_system, output_system: Enum attribute
+    system: Enum attribute
        matrix component system
+    units: str
+       units of stiffness matrix
     symm: BaseModuli
        moduli handler for symmetry
     cij: array(n)
        array of indpendent moduli for the material cyrstal symmetry
-    nmae: str
+    name: str
        name of material
     stiffness: matrix(6, 6)
-       stiffness matrix for output_system`
+       stiffness matrix for `system`
     compliance: matrix(6, 6)
-       compliance matrix for output_system`
+       compliance matrix for `system`
 
     Methods
     -------
@@ -77,39 +75,21 @@ class SingleCrystal:
     def __init__(
             self, symm, cij,
             name='<no name>',
-            input_system="VOIGT_GAMMA",
-            output_system="MANDEL",
-            input_units=DEFAULT_UNITS,
-            output_units=DEFAULT_UNITS,
+            system="VOIGT_GAMMA",
+            units="GPa",
             cte=None
     ):
         self.symm = symm
-        self._cij = np.array(cij).copy()
         self.name = name
 
-        # This section sets up the moduli handler. The `input_system` is used only
-        # on instantiation and is read-only. The `output_system` is set after the
-        # handler is instantiated because the handler uses the `output_system` to
-        # get the right matrix output. The `output_system` set() method uses the
-        # handler. The `units` are initialized with the `input_units` and then
-        # reset to the `output_units`.
-
-        self._input_system = component_system(input_system)
+        self._system = component_system(system)
         ModuliHandler = moduli_handler(symm)
         if symm == "triclinic":
-            self.moduli = ModuliHandler(
-                self.cij, system=self.input_system, units=input_units
-            )
+            self.moduli = ModuliHandler(cij, self.system, units)
         else:
-            self.moduli = ModuliHandler(
-                *self.cij, system=self.input_system, units=input_units
-            )
-        self.moduli.units = output_units
+            self.moduli = ModuliHandler(*cij, self.system, units)
 
-        self.output_system = component_system(output_system)
-
-        # Now for the units.
-        self._input_units = input_units
+        #TBR# self.system = component_system(system)
 
         # Set CTE (coefficient of thermal expansion)
         if cte is not None:
@@ -131,9 +111,7 @@ class SingleCrystal:
         G: float
            shear modulus
         """
-        iso = Isotropic.from_K_G(K, G)
-        cij = [iso.c11, iso.c12]
-        return cls("isotropic", cij, **kwargs)
+        return cls("isotropic", Isotropic.cij_from_K_G(K, G), **kwargs)
 
     @classmethod
     def from_E_nu(cls, E, nu, **kwargs):
@@ -146,53 +124,32 @@ class SingleCrystal:
         nu: float
            Poisson ratio
         """
-        iso = Isotropic.from_E_nu(E, nu)
-        cij = [iso.c11, iso.c12]
-        return cls("isotropic", cij, **kwargs)
+        return cls("isotropic", Isotropic.cij_from_E_nu(E, nu), **kwargs)
 
     @property
-    def input_system(self):
+    def system(self):
         """Input system for matrix components"""
-        return self._input_system
+        return self._system
+
+    @system.setter
+    def system(self, v):
+        """Set method for system"""
+        self._system = component_system(v)
+        self.moduli.system = self._system
 
     @property
-    def output_system(self):
-        """Output system for matrix components"""
-        return self._output_system
-
-    @output_system.setter
-    def output_system(self, v):
-        """Set method for output_system"""
-        self._output_system = component_system(v)
-        self.moduli.system = self._output_system
-
-    @property
-    def input_units(self):
-        return self._input_units
-
-    @property
-    def output_units(self):
+    def units(self):
         """Output units for moduli"""
         return self.moduli.units
 
-    @output_units.setter
-    def output_units(self, v):
+    @units.setter
+    def units(self, v):
         """Set method for output_units"""
         self.moduli.units = v
 
     @property
     def cij(self):
         """Return moduli for the input system"""
-        return self._cij
-
-    @property
-    def cij_in(self):
-        """Return moduli for the input system"""
-        return self.cij
-
-    @property
-    def cij_out(self):
-        """Return moduli for the output system"""
         return self.moduli.cij
 
     @property
@@ -225,14 +182,14 @@ class SingleCrystal:
 
         # Here is the main calculation.
 
-        System = self.system_d[self.output_system]
+        System = self.system_d[self.system]
         eps_s_mat = self._to_3d(eps)
 
         eps_c_mat = self._change_basis(eps_s_mat, rmat)
 
         eps_c_vec = System(eps_c_mat).symm
-        if self.output_system is SYSTEMS.VOIGT_GAMMA:
-            eps_c_vec[3:] *= 2.0
+        if self.system is SYSTEMS.VOIGT_GAMMA:
+            eps_c_vec[:, 3:] *= 2.0
 
         sig_c_vec = self.stiffness @ eps_c_vec.T
 
@@ -260,7 +217,7 @@ class SingleCrystal:
            array of strains in same frame as stresses
         """
 
-        System = self.system_d[self.output_system]
+        System = self.system_d[self.system]
         sig_s_mat = self._to_3d(sig)
 
         sig_c_mat = self._change_basis(sig_s_mat, rmat)
@@ -268,8 +225,8 @@ class SingleCrystal:
         sig_c_vec = System(sig_c_mat).symm
 
         eps_c_vec = self.compliance @ sig_c_vec.T
-        if self.output_system is SYSTEMS.VOIGT_GAMMA:
-            eps_c_vec[3:] *= 0.5
+        if self.system is SYSTEMS.VOIGT_GAMMA:
+            eps_c_vec[3:, :] *= 0.5
 
         eps_c_mat = System.from_parts(symm=eps_c_vec.T).matrices
 
@@ -281,6 +238,7 @@ class SingleCrystal:
 
     @staticmethod
     def _to_3d(arr):
+        """Make sure that array is 3-dimensional and of shape (n, 3, 3)"""
         if arr is None:
             return arr
 

@@ -1,7 +1,7 @@
 """Handler for hexagonal moduli"""
 
 from .base_moduli import BaseModuli
-from .stiffness_matrix import StiffnessMatrix, DEFAULT_UNITS
+from .stiffness_matrix import StiffnessMatrix, DEFAULTS
 
 import numpy as np
 
@@ -19,16 +19,13 @@ class Hexagonal(BaseModuli):
        units for the stress
     """
 
-    def __init__(self, c11, c12, c13, c33, c44,
-                 system=BaseModuli.DEFAULT_SYSTEM,
-                 units=DEFAULT_UNITS
-                 ):
+    def __init__(self, c11, c12, c13, c33, c44, system, units):
         self.c11 = c11
         self.c12 = c12
         self.c13 = c13
         self.c33 = c33
         self.c44 = c44
-        self.init_system(system)
+        self.init_system(system, units)
 
     @property
     def cij(self):
@@ -51,7 +48,7 @@ class Hexagonal(BaseModuli):
 
         cij = self._high_symmetry_matrix(c11, c12, c13, c22, c23, c33, c44, c55, c66)
 
-        return StiffnessMatrix(cij, self.system)
+        return StiffnessMatrix(cij, self.system, self.units)
 
     def moduli_from_stiffness(self):
         """Independent moduli to matrix"""

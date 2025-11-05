@@ -2,9 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from .stiffness_matrix import (
-    MatrixComponentSystem, StiffnessMatrix, DEFAULT_UNITS
-)
+from .stiffness_matrix import (MatrixComponentSystem, DEFAULTS)
 
 import numpy as np
 
@@ -13,7 +11,6 @@ class BaseModuli(ABC):
 
     """Moduli Handlers"""
     SYSTEMS = MatrixComponentSystem
-    DEFAULT_SYSTEM = MatrixComponentSystem.MANDEL
     subclass_registry = {}
 
 
@@ -36,14 +33,15 @@ class BaseModuli(ABC):
     def cij(self):
         """Array of independent moduli"""
 
-    def init_system(self, system):
-        """Initialize system
+    def init_system(self, system, units):
+        """Initialize system and units
 
         This also builds intializes the stiffness matrix from the moduli. After
         initialization, changing `system` resets the moduli from the stiffness
         matrix.
         """
         self._system = system
+        self._units = units
         self._stiffness = self.stiffness_from_moduli()
 
     @property
@@ -64,11 +62,11 @@ class BaseModuli(ABC):
 
     @property
     def units(self):
-        return self.stiffness.units
+        return self._units
 
     @units.setter
     def units(self, v):
-        self.stiffness.units = v
+        self._units = self.stiffness.units = v
 
     def _check_system(self, v):
         if v not in self.SYSTEMS:

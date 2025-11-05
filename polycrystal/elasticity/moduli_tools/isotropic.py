@@ -1,6 +1,6 @@
 """Isotropic moduli handler"""
 
-from .base_moduli import BaseModuli, DEFAULT_UNITS
+from .base_moduli import BaseModuli, DEFAULTS
 from .stiffness_matrix import StiffnessMatrix
 
 import numpy as np
@@ -18,17 +18,14 @@ class Isotropic(BaseModuli):
        MatrixComponentSystem attribute
     """
 
-    def __init__(self, c11, c12,
-                 system=BaseModuli.DEFAULT_SYSTEM,
-                 units=DEFAULT_UNITS
-                 ):
+    def __init__(self, c11, c12, system, units):
         self.c11 = c11
         self.c12 = c12
-        self.init_system(system)
+        self.init_system(system, units)
 
     @classmethod
-    def from_K_G(cls, K, G, system=BaseModuli.DEFAULT_SYSTEM):
-        """Initialize from bulk and shear moduli
+    def cij_from_K_G(cls, K, G):
+        """Compute cij from bulk and shear moduli
 
         Parameters
         ----------
@@ -36,14 +33,19 @@ class Isotropic(BaseModuli):
            bulk modulus
         G: float
            shear modulus
+
+        Returns
+        -------
+        tuple:
+           (c11, c12)
         """
-        c11 = (3*K + 4*G)/3.
-        c12 = (3*K - 2*G)/3.
-        return cls(c11, c12, system=system)
+        c11 = (3 * K + 4 * G) / 3.0
+        c12 = (3 * K - 2 * G) / 3.0
+        return (c11, c12)
 
     @classmethod
-    def from_E_nu(cls, E, nu, system=BaseModuli.DEFAULT_SYSTEM):
-        """Initialize from Young's modulus and Poisson ratio
+    def cij_from_E_nu(cls, E, nu):
+        """Compute cij from Young's modulus and Poisson ratio
 
         Parameters
         ----------
@@ -51,10 +53,14 @@ class Isotropic(BaseModuli):
            bulk modulus
         nu: float
            shear modulus
+        Returns
+        -------
+        tuple:
+           (c11, c12)
        """
         K = E/(1 - 2*nu)/3.
         G = E/(1 + nu)/2.
-        return cls.from_K_G(K, G, system=system)
+        return cls.cij_from_K_G(K, G)
 
     @property
     def cij(self):
@@ -65,6 +71,7 @@ class Isotropic(BaseModuli):
         c11 = c22 = c33 = self.c11
         c12 = c13 = c23 = self.c12
         cdiff_12 = c11 - c12
+
         if self.system is self.SYSTEMS.VOIGT_GAMMA:
             c44 = c55 = c66 = 0.5 * cdiff_12
         else:
@@ -72,7 +79,7 @@ class Isotropic(BaseModuli):
 
         cij = self._high_symmetry_matrix(c11, c12, c13, c22, c23, c33, c44, c55, c66)
 
-        return StiffnessMatrix(cij, self.system)
+        return StiffnessMatrix(cij, self.system, self.units)
 
     def moduli_from_stiffness(self):
         """Independent moduli to matrix"""
