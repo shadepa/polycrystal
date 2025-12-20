@@ -64,7 +64,13 @@ class TestSingleCrystal:
         sx.system = "MANDEL"
         assert maxdiff(sx.stiffness, ID_6X6) < TOL
 
-        # Cubic
+        # Cubic from K, Gd, Gs
+        K, Gd, Gs = 1 / 3,  1 / 2,  1 / 2
+        sx = SingleCrystal.from_K_Gd_Gs(K, Gd, Gs)
+        sx.system = "MANDEL"
+        assert maxdiff(sx.stiffness, ID_6X6) < TOL
+
+        # Cubic from cij
         sx = SingleCrystal(
             'cubic', [1.0,  0.0,  0.5]
         )
@@ -266,14 +272,14 @@ class TestThermalExpansion:
 
         # From float.
         sx = SingleCrystal.from_E_nu(1, 0)
-        assert not hasattr(sx, "cte")
+        assert sx._cte is None
 
     def test_cte_float(self):
 
         # From float.
         cte = 1.2e-3
         sx = SingleCrystal.from_E_nu(1, 0, cte=cte)
-        assert np.allclose(sx.cte, np.diag(3 * (cte,)))
+        assert np.allclose(sx.cte(0), np.diag(3 * (cte,)))
 
     def test_cte_array33(self):
 
@@ -284,7 +290,7 @@ class TestThermalExpansion:
             [3.1, 41, 5.9],
         ])
         sx = SingleCrystal.from_E_nu(1, 0, cte=arr)
-        assert np.allclose(sx.cte, arr)
+        assert np.allclose(sx.cte(0), arr)
 
     def test_cte_array_shape(self):
 
@@ -295,3 +301,13 @@ class TestThermalExpansion:
         ])
         with pytest.raises(RuntimeError):
             sx = SingleCrystal.from_E_nu(1, 0, cte=arr)
+
+    def test_user_function(self):
+
+        @staticmethod
+        def cte_func(temp):
+            return 1.0 if temp > 0 else -2.0
+
+        sx = SingleCrystal.from_E_nu(1, 0, cte=cte_func)
+        assert sx.cte(5.0) == 1.0
+        assert sx.cte(-5.0) == -2.0
