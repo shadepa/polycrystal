@@ -1,11 +1,13 @@
 """Elasticity tools for single crystals"""
 
+from collections.abc import Callable
+
 import numpy as np
 
 from polycrystal.utils.tensor_data.mandel_system import MandelSystem
 from polycrystal.utils.tensor_data.voigt_system import VoigtSystem
 
-from .moduli_tools import moduli_handler, component_system, Isotropic
+from .moduli_tools import moduli_handler, component_system, Isotropic, Cubic
 from .moduli_tools.stiffness_matrix import DEFAULTS, MatrixComponentSystem
 
 SYSTEMS = MatrixComponentSystem
@@ -31,14 +33,14 @@ class SingleCrystal:
        {"VOIGT_GAMMA", VOIGT_EPSILON", "MANDEL"}
     units: str, default = "GPa"
        units of stiffness matrix
-    cte: float | array(3, 3), default = None
+    cte: float | array(3, 3) | function, default = None
        coefficient of thermal expansion; a single value for isotropic materials
-       or a 3 x 3 array in the crystal frame
+       or a 3 x 3 array in the crystal frame; in the most general case, it can
+       be a function of reference temperature; note that the functional form can
+       be made to handle units
 
     Attributes
     ----------
-    cte: array(3, 3) or float
-       coefficient of thermal expansion, if specified
     system: Enum attribute
        matrix component system
     units: str
@@ -62,9 +64,14 @@ class SingleCrystal:
        Instantiate from Young's modulus and Poisson ratio.
     apply_stiffness:
        apply the stiffness to array of strain tensors, possibly in a rotated frame
+    apply_compliance:
+       apply the compliance to array of stress tensors, possibly in a rotated frame
+    cte:
+       coefficient of thermal expansion as a function of a reference temperature
     """
 
     _MSG_NOT_IMPLEMENTED = "This function is not currently implemented."
+    DEFAULT_SYSTEM = SYSTEMS.VOIGT_GAMMA
 
     system_d = {
         SYSTEMS.VOIGT_GAMMA: VoigtSystem,
@@ -75,7 +82,7 @@ class SingleCrystal:
     def __init__(
             self, symm, cij,
             name='<no name>',
-            system="VOIGT_GAMMA",
+            system=DEFAULT_SYSTEM,
             units="GPa",
             cte=None
     ):
@@ -89,16 +96,15 @@ class SingleCrystal:
         else:
             self.moduli = ModuliHandler(*cij, self.system, units)
 
-        #TBR# self.system = component_system(system)
+        # Check CTE (coefficient of thermal expansion) value.
+        if not isinstance(cte, (type(None), float, np.ndarray, Callable)):
+            raise TypeError("Unexpected type for `cte` argument")
 
-        # Set CTE (coefficient of thermal expansion)
-        if cte is not None:
-            if isinstance(cte, np.ndarray):
-                if cte.shape != (3, 3):
-                    raise RuntimeError("CTE shape is not 3x3")
-                self.cte = cte
-            elif isinstance(cte, (float, int)):
-                self.cte = np.diag(3 * (cte,))
+        if isinstance(cte, np.ndarray):
+            if cte.shape != (3, 3):
+                raise RuntimeError("CTE shape is not 3x3")
+
+        self._cte = cte
 
     @classmethod
     def from_K_G(cls, K, G, **kwargs):
@@ -125,6 +131,24 @@ class SingleCrystal:
            Poisson ratio
         """
         return cls("isotropic", Isotropic.cij_from_E_nu(E, nu), **kwargs)
+
+    @classmethod
+    def from_K_Gd_Gs(cls, K, Gd, Gs, **kwargs):
+        """Instantiate from K and G
+
+        Parameters
+        ----------
+        K: float
+           bulk modulus
+        G_d: float
+           shear modulus for diagonal
+        G_s: float
+           shear modulus for off-diagonal
+        """
+        system = kwargs.get("system", cls.DEFAULT_SYSTEM)
+        cij =  Cubic.cij_from_K_Gd_Gs(K, Gd, Gs, system)
+        print("cij: ", cij, system)
+        return cls("cubic", cij, **kwargs)
 
     @property
     def system(self):
@@ -161,6 +185,33 @@ class SingleCrystal:
     def compliance(self):
         """Compliance matrix in crystal coordinates"""
         return np.linalg.inv(self.stiffness)
+
+    def cte(self, reftemp):
+        """Coefficient of Thermal Expansion
+
+        This is a user-defined function that returns the CTE value for a given reference
+        temperature. The input `reftemp` might include units information as well.
+
+        Parameters
+        ----------
+        reftemp: user-defined
+            reference temperature, possibly including units
+
+        Returns
+        -------
+        array(3, 3):
+           the 3 x 3  CTE matrix
+        """
+        if self._cte is None:
+            raise RuntimeError("No CTE (Coefficient of Thermal Expansion) has been set.")
+        elif isinstance(self._cte, float):
+            return np.diag(3 * (self._cte,))
+        elif isinstance(self._cte, np.ndarray):
+            return self._cte
+        elif isinstance(self._cte, Callable):
+            return self._cte(reftemp)
+        else:
+            raise RuntimeError("Cannot create CTE function.")
 
     def apply_stiffness(self, eps, rmat=None):
         """Stress tensors from strain tensors in same reference frame

@@ -67,10 +67,11 @@ class Cubic(BaseModuli):
         """
         c11 = (3*K + 4*Gd)/3.
         c12 = (3*K - 2*Gd)/3.
+        # Do not use a string here for the system.
         if system is BaseModuli.SYSTEMS.VOIGT_GAMMA:
             c44 = Gs
         else:
-            c44 = 2.0 * Gs
+            c44 = 2 * Gs
 
         return c11, c12, c44
 
