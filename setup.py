@@ -22,5 +22,6 @@ install_reqs = [
     'numpy',
     'scipy',
     'pytest',
-    'pint'
+    'pint',
+    'pyyaml'
 ]
