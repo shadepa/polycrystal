@@ -86,5 +86,5 @@ class LinearElasticMaterial(BaseLoader):
         """Elastic SingleCrystal instance"""
         return SingleCrystal(
             self.symmetry_to_use, self.cij, name=self.name,
-            input_system=self.system, input_units=self.units
+            system=self.system, units=self.units
         )
